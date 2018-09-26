@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    
+    println"Configure for $project.name" //遍历子Project，project变量对应每个子Project
     repositories {
         google()
         jcenter()
