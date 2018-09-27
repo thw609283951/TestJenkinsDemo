@@ -25,4 +25,4 @@ def initMinshengGradleEnvironment(){
 //settings.gradle加载的时候，会执行initMinshengGradleEnvironment
 initMinshengGradleEnvironment()
 
-include ':app', ':lib_test'
+include ':app'

@@ -1,31 +1,130 @@
 apply plugin: 'com.android.application'
 
-ext.systemProperties= System.properties
+//这里是groovy的代码了，定义了一个获取时间的方法，groovy是兼容java，它可以直接使用jdk里的方法
+def getTime() {
+    return new Date().format("yyyy-MM-dd-HH-mm-ss", TimeZone.getTimeZone("GMT+08"))
+}
+
 android {
-    compileSdkVersion 28
-    defaultConfig {
-        applicationId APP_ID
-        minSdkVersion 15
-        targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        // AndroidManifest.xml 里面UMENG_CHANNEL的value为 ${UMENG_CHANNEL_VALUE}
-//        manifestPlaceholders = [UMENG_CHANNEL_VALUE: "umeng"]//添加一个默认渠道号
-        manifestPlaceholders = [APP_NAME_VALUE: APP_NAME]
-        resValue "string", "APP_NAME", APP_NAME
+    compileSdkVersion rootProject.ext.android["compileSdkVersion"]
+    buildToolsVersion rootProject.ext.android["buildToolsVersion"]
+    useLibrary 'org.apache.http.legacy'
+
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
     }
 
-    signingConfigs{
+    defaultConfig {
+        applicationId rootProject.ext.android["appId"]
+        versionName rootProject.ext.android["versionName"]
+        versionCode rootProject.ext.android["versionCode"]
+        minSdkVersion rootProject.ext.android["minSdkVersion"]
+        targetSdkVersion rootProject.ext.android["targetSdkVersion"]
+        testInstrumentationRunner rootProject.ext.dependencies["androidJUnitRunner"]
 
+        flavorDimensions rootProject.ext.android["versionCode"].toString()
+
+        // AndroidManifest.xml 里面UMENG_CHANNEL的value为 ${UMENG_CHANNEL_VALUE}
+        manifestPlaceholders = [UMENG_CHANNEL_VALUE: "umeng"]//添加一个默认渠道号
+        resValue "string", "APP_NAME", rootProject.ext.android["appName"]
+        buildConfigField("String", "APP_HOST_ADDRESS", "\""+APP_HOST_ADDRESS+"\"")
+    }
+
+    //签名配置
+    signingConfigs{
+        releaseSigning{
+            if(IS_JENKINS.toBoolean()){
+//                try{
+//                    storeFile file('../buildtool/jenkins-release.jks')
+//                    storePassword '123456'
+//                    keyAlias 'jenkins'
+//                    keyPassword '123456'
+//                }catch (ex){
+//                    throw new InvalidUserDataException(ex.toString())
+//                }
+            }else{
+                try{
+                    storeFile file('../buildtool/jenkins-release.jks')
+                    storePassword '123456'
+                    keyAlias 'jenkins'
+                    keyPassword '123456'
+                }catch (ex){
+                    throw new InvalidUserDataException(ex.toString())
+                }
+            }
+
+            android.applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    //时间戳
+                    def timeNow
+                    //是否为Jenkins打包，输出路径不同
+                    if (IS_JENKINS.toBoolean()) {
+                        //Jenkins打包输出到服务器路径
+                        timeNow = BUILD_TIME
+                        //BUILD_PATH为服务器输出路径
+                        variant.getPackageApplication().outputDirectory = new File(BUILD_PATH)
+                    } else {
+                        //本机打包输出在本机路径
+                        timeNow = getTime()
+                        // 自定义输出路径
+                        variant.getPackageApplication().outputDirectory = new File(BUILD_PATH + "outputs")
+                    }
+                    outputFileName = APP_NAME +'-'+ variant.buildType.name + '-v'+defaultConfig.versionName +'-'+ variant.productFlavors[0].name + '-' + timeNow + '.apk'
+                }
+            }
+        }
+    }
+    /**
+     * 替换AndroidManifest.xml的BaiduMobAd_CHANNEL_VALUE字符串为渠道名称格式
+     * <meta-data
+     *    android:name="BaiduMobAd_CHANNEL"
+     *    android:value="${BaiduMobAd_CHANNEL_VALUE}" />
+     */
+    productFlavors.all { flavor ->
+        flavor.manifestPlaceholders = [UMENG_CHANNEL_VALUE: name]
     }
 
     buildTypes {
-        release {
+        debug{
+            //给applicationId添加后缀“.debug”
+            applicationIdSuffix ".debug"
+            buildConfigField "boolean", "LOG_DEBUG", "true"
+            zipAlignEnabled false
+            shrinkResources false
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable true
+            //签名
+            signingConfig signingConfigs.releaseSigning
         }
 
+        release {
+            // 不显示Log
+            buildConfigField "boolean", "LEO_DEBUG", "false"
+            //是否zip对齐
+            zipAlignEnabled true
+            // 缩减resource文件
+            shrinkResources true
+            //Proguard
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //签名
+            signingConfig signingConfigs.releaseSigning
+        }
+
+        //这里的作用跟 singingConfigs 差不多，只是为不同的 flavor 设置一些属性
+        //常见的设置比如设置不同的渠道编号，设置不同的 api 服务器等等
+        productFlavors {
+            fir {
+                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "fir"]
+            }
+            GooglePlay {
+                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "GooglePlay"]
+            }
+            Umeng {
+                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "Umeng"]
+            }
+        }
     }
 }
 

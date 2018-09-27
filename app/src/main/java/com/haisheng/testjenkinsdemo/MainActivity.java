@@ -7,7 +7,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ProgressWebView webView;
 
-    private String mUrl = "http://zs1.aada.top/app/index.php?i=6&c=entry&do=shop&m=sz_yi";
+    private String mUrl = BuildConfig.APP_HOST_ADDRESS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
