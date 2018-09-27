@@ -111,6 +111,7 @@ public class ProgressWebView extends WebView {
         LayoutParams lp = (LayoutParams) progressbar.getLayoutParams();
         lp.x = l;
         lp.y = t;
+
         progressbar.setLayoutParams(lp);
         super.onScrollChanged(l, t, oldl, oldt);
     }
