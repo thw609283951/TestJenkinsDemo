@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 //这里是groovy的代码了，定义了一个获取时间的方法，groovy是兼容java，它可以直接使用jdk里的方法
 def getTime() {
-    return new Date().format("yyyy-MM-dd-HH-mm-ss", TimeZone.getTimeZone("GMT+08"))
+    return new Date().format("yyyy-MM-dd-HHmmss", TimeZone.getTimeZone("GMT+08"))
 }
 
 android {
@@ -30,7 +30,7 @@ android {
 
         resValue "string", "APP_NAME", rootProject.ext.android["appName"]
 
-        manifestPlaceholders = [app_icon   : "E:\\AndroidStudioProjects\\MVPArms-master\\image\\mi_wo_logo.png"]
+        manifestPlaceholders = [app_icon   : "@mipmap/ic_launcher"]
 
         buildConfigField("String", "APP_HOST_ADDRESS", "\""+APP_HOST_ADDRESS+"\"")
     }
@@ -53,6 +53,8 @@ android {
             }
 
             android.applicationVariants.all { variant ->
+                // 自定义输出路径
+                variant.getPackageApplication().outputDirectory = new File(BUILD_PATH)
                 variant.outputs.all { output ->
                     //时间戳
                     def timeNow
@@ -60,13 +62,9 @@ android {
                     if (IS_JENKINS.toBoolean()) {
                         //Jenkins打包输出到服务器路径
                         timeNow = getTime()
-                        //BUILD_PATH为服务器输出路径
-                        variant.getPackageApplication().outputDirectory = new File(BUILD_PATH)
                     } else {
                         //本机打包输出在本机路径
                         timeNow = getTime()
-                        // 自定义输出路径
-                        variant.getPackageApplication().outputDirectory = new File(BUILD_PATH + "outputs")
                     }
                     outputFileName = APP_NAME +'-'+ variant.buildType.name + '-v'+defaultConfig.versionName +'-'+ variant.productFlavors[0].name + '-' + timeNow + '.apk'
                 }
