@@ -26,32 +26,30 @@ android {
         flavorDimensions rootProject.ext.android["versionCode"].toString()
 
         // AndroidManifest.xml 里面UMENG_CHANNEL的value为 ${UMENG_CHANNEL_VALUE}
-        manifestPlaceholders = [UMENG_CHANNEL_VALUE: "umeng"]//添加一个默认渠道号
+        // manifestPlaceholders = [UMENG_CHANNEL_VALUE: "dev"]//添加一个默认渠道号
+
         resValue "string", "APP_NAME", rootProject.ext.android["appName"]
+
+        manifestPlaceholders = [app_icon   : "E:\\AndroidStudioProjects\\MVPArms-master\\image\\mi_wo_logo.png"]
+
         buildConfigField("String", "APP_HOST_ADDRESS", "\""+APP_HOST_ADDRESS+"\"")
     }
 
     //签名配置
     signingConfigs{
         releaseSigning{
-            if(IS_JENKINS.toBoolean()){
-                try{
-                    storeFile file(KEYSTORES_PATH)
-                    storePassword '123456'
-                    keyAlias 'jenkins'
-                    keyPassword '123456'
-                }catch (ex){
-                    throw new InvalidUserDataException(ex.toString())
-                }
-            }else{
-                try{
-                    storeFile file('../buildtool/jenkins-release.jks')
-                    storePassword '123456'
-                    keyAlias 'jenkins'
-                    keyPassword '123456'
-                }catch (ex){
-                    throw new InvalidUserDataException(ex.toString())
-                }
+            //V1：应该是通过ZIP条目进行验证，这样APK 签署后可进行许多修改，这样可以移动甚至重新压缩文件。
+            //V2：验证压缩文件的所有字节，而不是单个 ZIP 条目，因此，在签名后无法再更改(包括 zipalign)。正因如此，现在在编译过程中，我们将压缩、调整和签署合并成一步完成。好处显而易见，更安全而且新的签名可缩短在设备上进行验证的时间（不需要费时地解压缩然后验证），从而加快应用安装速度。
+            v1SigningEnabled true
+            v2SigningEnabled true
+
+            try{
+                storeFile file(KEYSTORES_PATH)
+                storePassword '123456'
+                keyAlias 'jenkins'
+                keyPassword '123456'
+            }catch (ex){
+                throw new InvalidUserDataException(ex.toString())
             }
 
             android.applicationVariants.all { variant ->
@@ -115,15 +113,15 @@ android {
         //这里的作用跟 singingConfigs 差不多，只是为不同的 flavor 设置一些属性
         //常见的设置比如设置不同的渠道编号，设置不同的 api 服务器等等
         productFlavors {
-            fir {
-                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "fir"]
+            dev {
+//                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "fir"]
             }
-            GooglePlay {
-                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "GooglePlay"]
-            }
-            Umeng {
-                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "Umeng"]
-            }
+//            GooglePlay {
+//                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "GooglePlay"]
+//            }
+//            Umeng {
+//                manifestPlaceholders = [UMENG_CHANNEL_VALUE: "Umeng"]
+//            }
         }
     }
 }
