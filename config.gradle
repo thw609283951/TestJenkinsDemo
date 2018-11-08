@@ -6,7 +6,7 @@ ext {
             versionCode             : VERSION_CODE.toInteger(),
             versionName             : VERSION_NAME,
             compileSdkVersion      : 28,
-            buildToolsVersion      : "28.0.2",
+            buildToolsVersion      : "28.0.3",
             minSdkVersion           : 19,
             targetSdkVersion        : 28
     ]
