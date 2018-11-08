@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.jakewharton.butterknife'
 
 //这里是groovy的代码了，定义了一个获取时间的方法，groovy是兼容java，它可以直接使用jdk里的方法
 def getTime() {
@@ -15,6 +16,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
     }
 
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
     defaultConfig {
         applicationId rootProject.ext.android["appId"]
         versionName rootProject.ext.android["versionName"]
@@ -24,15 +31,16 @@ android {
         testInstrumentationRunner rootProject.ext.dependencies["androidJUnitRunner"]
 
         flavorDimensions rootProject.ext.android["versionCode"].toString()
-
         // AndroidManifest.xml 里面UMENG_CHANNEL的value为 ${UMENG_CHANNEL_VALUE}
         // manifestPlaceholders = [UMENG_CHANNEL_VALUE: "dev"]//添加一个默认渠道号
 
         resValue "string", "APP_NAME", rootProject.ext.android["appName"]
-
         manifestPlaceholders = [app_icon   : "@mipmap/ic_launcher"]
-
         buildConfigField("String", "APP_HOST_ADDRESS", "\""+APP_HOST_ADDRESS+"\"")
+
+        ndk {
+            abiFilters "armeabi"
+        }
     }
 
     //签名配置
@@ -46,7 +54,7 @@ android {
             try{
                 storeFile file(KEYSTORES_PATH)
                 storePassword '123456'
-                keyAlias 'jenkins'
+                keyAlias 'key'
                 keyPassword '123456'
             }catch (ex){
                 throw new InvalidUserDataException(ex.toString())
@@ -126,9 +134,16 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:28.0.0-rc02'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation(rootProject.ext.dependencies["appcompat-v7"]){
+        exclude module: 'support-annotations'
+    }
+    implementation rootProject.ext.dependencies["design"]
+    implementation rootProject.ext.dependencies["constraint-layout"]
+    annotationProcessor rootProject.ext.dependencies["espresso-core"]
+
+    implementation rootProject.ext.dependencies["butterknife"]
+    annotationProcessor(rootProject.ext.dependencies["butterknife-compiler"]) {
+        exclude module: 'support-annotations'
+    }
+    implementation rootProject.ext.dependencies["utilcode"]
 }
